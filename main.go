@@ -30,7 +30,7 @@ func (s Strategy) Run() error {
 
 func (s Strategy) runExternalCmd(cmd string) error {
 	const dc = "docker-compose"
-	args := []string{"exec", "fpm", "bin/magento", cmd}
+	args := []string{"exec", "-T", "fpm", "bin/magento", cmd}
 
 	log.Printf("Running: %s %s", dc, strings.Join(args, " "))
 
