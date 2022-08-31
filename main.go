@@ -8,6 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/mp3"
+	"github.com/faiface/beep/speaker"
 )
 
 type Strategy struct {
@@ -49,6 +53,8 @@ func (s Strategy) runExternalCmd(cmd string) error {
 
 func main() {
 	log.Println("Attempting to fix your 'gento... 🧑‍🔧")
+
+	playAudio()
 
 	strategies := []Strategy{
 		// run cache:flush first...
@@ -226,6 +232,39 @@ func main() {
 	}
 
 	log.Fatalf("I'm sorry, none of the strategies worked. 🙁")
+}
+
+func playAudio() {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Printf("🙁 Failed to play audio: Failed to find home directory: %s", err)
+
+		return
+	}
+
+	audioFile := filepath.Join(homeDir, ".fixmygento", "loop.mp3")
+
+	f, err := os.Open(audioFile)
+	if err != nil {
+		log.Printf("🙁 Failed to play audio: Could not open audio file \"%s\": %s", err)
+
+		return
+	}
+
+	streamer, format, err := mp3.Decode(f)
+	if err != nil {
+		log.Printf("🙁 Failed to play audio: Error decoding MP3 file: %s", err)
+
+		return
+	}
+
+	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+
+	loop := beep.Loop(-1, streamer)
+	done := make(chan bool)
+	speaker.Play(beep.Seq(loop, beep.Callback(func() {
+		done <- true
+	})))
 }
 
 func logMessage(name string, success bool) error {
